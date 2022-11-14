@@ -1,10 +1,12 @@
-#include "ESP8266WiFi.h"
-//
-#include <WiFiClient.h>
-#include <ESP8266WiFiMulti.h> 
-#include <ESP8266mDNS.h>
-#include <ESP8266WebServer.h>   // Include the WebServer library
+
+#include "oui.h" //functions.h
+#include "functions.h"
+#include "settings.h"
+// #include "Attack.h"
+#include "wifi.h"
 #include <FS.h>   // Include the SPIFFS library
+#include <ArduinoJson.h>
+//#include <ConfigStorage.h> // https://github.com/Tost69/ConfigStorage - https://github.com/Tost69/ConfigStorage/blob/main/examples/ConfigStorage_ESP32/ConfigStorage_ESP32.ino
  
 ESP8266WiFiMulti wifiMulti;     // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
 
@@ -15,17 +17,22 @@ bool handleFileRead(String path);       // send the right file to the client (if
 //http
 void handleRoot();              // function prototypes for HTTP handlers
 void handleNotFound();
+void handleWifi();
+void handleWifiList();
+
+const char *ssid = "ESP8266-Test2"; // The name of the Wi-Fi network that will be created
+uint32_t currentTime  = 0;
 void setup() {
     Serial.begin(115200);
-
-    listWifi();
+    // listWifi();
     //
-
-    const char *ssid = "ESP8266-Test2"; // The name of the Wi-Fi network that will be created
     const char *password = "thereisnospoon";   // The password required to connect to it, leave blank for an open  
     startAP(ssid,password);
     SPIFFS.begin();                           // Start the SPI Flash Files System
     startWebServer();
+    // get time
+    currentTime = millis();
+
  
 }
 void startWebServer(){
@@ -36,12 +43,17 @@ void startWebServer(){
     Serial.println(WiFi.localIP());           // Send the IP address of the ESP8266 to the computer
 
     if (MDNS.begin("esp8266")) {              // Start the mDNS responder for esp8266.local
-    Serial.println("mDNS responder started");
+      Serial.println("mDNS responder started");
     } else {
-    Serial.println("Error setting up MDNS responder!");
+      Serial.println("Error setting up MDNS responder!");
     }
 
+    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.on("/", handleRoot);               // Call the 'handleRoot' function when a client requests URI "/"
+    //->    /api/wifi/
+    server.on("/api/wifi/", HTTP_POST,handleWifi); 
+    //->    /api/wifi/
+    server.on("/api/wifi/list", HTTP_POST,handleWifiList); 
     server.onNotFound(handleNotFound);        // When a client requests an unknown URI (i.e. something other than "/"), call function "handleNotFound"
 
     server.begin();                           // Actually start the server
@@ -55,37 +67,70 @@ void startMultiClientAP(const char *ssid, const char *password){
     }
 
 }
-void startAP(const char *ssid, const char *password){
-    Serial.begin(115200);
-    delay(10);
-    Serial.println('\n');
-
-    WiFi.softAP(ssid, password);             // Start the access point
-    Serial.print("Access Point \"");
-    Serial.print(ssid);
-    Serial.println("\" started");
-
-    Serial.print("IP address:\t");
-    Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
-}
-void listWifi(){
-  int numberOfNetworks = WiFi.scanNetworks();
- 
-  for(int i =0; i<numberOfNetworks; i++){
- 
-      Serial.print("Network name: ");
-      Serial.println(WiFi.SSID(i));
-      Serial.print("Signal strength: ");
-      Serial.println(WiFi.RSSI(i));
-      Serial.println("-----------------------");
- 
-  }
-}
  
 // void loop() {}
 
 void loop(void){
   server.handleClient();                    // Listen for HTTP requests from clients
+  MDNS.update();
+}
+
+void handleWifi() {
+  String draw = server.arg("plain");
+  DynamicJsonDocument doc(512);
+  doc["name_wifi"] = ssid;
+  doc["ip"] = WiFi.softAPIP();
+  char json[512];
+  serializeJson(doc, json);
+  server.send(200, "application/json",json);
+  // server.send(200, "text/plain", "Hello world!");   // Send HTTP status 200 (Ok) and send some text to the browser/client
+}
+void handleWifiList() {
+  //
+  // String message = "";
+  // for (int i = 0; i < server.args(); i++) {
+
+  //   message += "Arg nº" + (String)i + " –> ";
+  //   message += server.argName(i) + ": ";
+  //   message += server.arg(i) + "\n";
+
+  // } 
+  // Serial.print("message: ");
+  // Serial.println(message);
+//
+  // String plain = server.arg("plain");
+  // int index_finish = plain.indexOf('&');
+  // int index_start = plain.indexOf('=');
+  // String draw = plain.substring(index_start+1,index_finish);
+  String draw = server.arg(0);
+  //"recordsTotal": 10,
+  // "recordsFiltered": 5,
+  // "data": [
+  //   {
+  //     "name_ssid": "Airi",
+  //     "signal_strength": "Satou",
+  //     "access": "/api/wifi/profile"
+  // },..]
+  // int draw_int = draw.toInt()+1;
+  //
+  DynamicJsonDocument doc(2048);
+  doc["draw"]=draw;//String(draw_int);
+  //
+  int numberOfNetworks = WiFi.scanNetworks();
+  doc["recordsTotal"]=numberOfNetworks;
+  doc["recordsFiltered"]=numberOfNetworks;
+  DynamicJsonDocument docInput(200);
+  for(int i =0; i<numberOfNetworks; i++){
+    docInput["name_ssid"]=WiFi.SSID(i);
+    docInput["signal_strength"]=WiFi.RSSI(i);
+    docInput["access"]="/api/wifi/profile";
+    doc["data"][i]=docInput;
+  }
+  char json[2048];
+  serializeJson(doc, json);
+  Serial.print("back: ");
+  Serial.println(json);
+  server.send(200, "application/json", json);
 }
 
 void handleRoot() {

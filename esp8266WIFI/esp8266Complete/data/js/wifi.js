@@ -53,3 +53,25 @@ function reload_table_wifi(){
         ],
     });
 }
+function reload_table_wifi_home(){
+    var table = $('#table_index').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/api/wifi/list',
+            type: 'POST',
+        },
+        columns: [
+            { data: 'name_ssid' },
+            { data: 'signal_strength' },
+            { data: '' }
+        ],
+        columnDefs: [
+            {
+                targets: -1,
+                data: null,
+                defaultContent: '<button>Click!</button>',
+            },
+        ],
+    });
+}
