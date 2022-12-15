@@ -4,12 +4,12 @@
 
 #define MAGIC_NUM 3416245
 
-extern void getRandomMac(uint8_t* mac); //functions.h
+extern void getRandomMac(uint8_t* mac); // from functions.h
 
 namespace settings {
     //
     settings_t data;
-    //
+    // returng settings from attacks
     const attack_settings_t& getAttackSettings() {
         return data.attack;
     }

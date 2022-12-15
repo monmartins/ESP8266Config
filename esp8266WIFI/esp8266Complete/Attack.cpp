@@ -1,8 +1,10 @@
 #include "Attack.h"
 #include "settings.h" // getAttackSettings
 
+
+//Method static setup the environment of attacks
 Attack::Attack() {
-    getRandomMac(mac);
+    getRandomMac(mac); // function from functions.h
 
 
     if (settings::getAttackSettings().beacon_interval == INTERVAL_1S) {
