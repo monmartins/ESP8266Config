@@ -2,6 +2,7 @@
 
 // #include "settings.h"
 #include "wifi.h"
+#include "file.h"
 
 extern Accesspoints accesspoints;
 // extern Stations     stations;
@@ -170,89 +171,89 @@ void Scan::save(bool force, String filePath) {
     String tmp = FILE_PATH;
 
     FILE_PATH = filePath;
-    // save(true);
+    save(true);
     FILE_PATH = tmp;
 }
 
-// void Scan::save(bool force) {
-//     if (!(accesspoints.changed || stations.changed) && !force) return;
+void Scan::save(bool force) {
+    if (!(accesspoints.changed || accesspoints.Stations_changed) && !force) return;
 
-//     // Accesspoints
-//     String buf = String(OPEN_CURLY_BRACKET) + String(DOUBLEQUOTES) + str(SC_JSON_APS) + String(DOUBLEQUOTES) + String(
-//         DOUBLEPOINT) + String(OPEN_BRACKET); // {"aps":[
+    // Accesspoints
+    String buf = String(OPEN_CURLY_BRACKET) + String(DOUBLEQUOTES) + str(SC_JSON_APS) + String(DOUBLEQUOTES) + String(
+        DOUBLEPOINT) + String(OPEN_BRACKET); // {"aps":[
 
-//     if (!writeFile(FILE_PATH, buf)) {        // overwrite old file
-//         prnt(F_ERROR_SAVING);
-//         prntln(FILE_PATH);
-//         return;
-//     }
+    if (!file_spiffs::writeFile(FILE_PATH, buf)) {        // overwrite old file
+        prnt(F_ERROR_SAVING);
+        prntln(FILE_PATH);
+        return;
+    }
 
-//     buf = String(); // clear buffer
-//     uint32_t apCount = accesspoints.count();
+    buf = String(); // clear buffer
+    uint32_t apCount = accesspoints.count();
 
-//     for (uint32_t i = 0; i < apCount; i++) {
-//         buf += String(OPEN_BRACKET) + String(DOUBLEQUOTES) + escape(accesspoints.getSSID(i)) + String(DOUBLEQUOTES) +
-//                String(COMMA);                                                                                    // ["ssid",
-//         buf += String(DOUBLEQUOTES) + escape(accesspoints.getNameStr(i)) + String(DOUBLEQUOTES) + String(COMMA); // "name",
-//         buf += String(accesspoints.getCh(i)) + String(COMMA);                                                    // 1,
-//         buf += String(accesspoints.getRSSI(i)) + String(COMMA);                                                  // -30,
-//         buf += String(DOUBLEQUOTES) + accesspoints.getEncStr(i) + String(DOUBLEQUOTES) + String(COMMA);          // "wpa2",
-//         buf += String(DOUBLEQUOTES) + accesspoints.getMacStr(i) + String(DOUBLEQUOTES) + String(COMMA);          // "00:11:22:00:11:22",
-//         buf += String(DOUBLEQUOTES) + accesspoints.getVendorStr(i) + String(DOUBLEQUOTES) + String(COMMA);       // "vendor",
-//         buf += b2s(accesspoints.getSelected(i)) + String(CLOSE_BRACKET);                                         // false]
+    for (uint32_t i = 0; i < apCount; i++) {
+        buf += String(OPEN_BRACKET) + String(DOUBLEQUOTES) + escape(accesspoints.getSSID(i)) + String(DOUBLEQUOTES) +
+               String(COMMA);                                                                                    // ["ssid",
+        buf += String(DOUBLEQUOTES) + escape(accesspoints.getNameStr(i)) + String(DOUBLEQUOTES) + String(COMMA); // "name",
+        buf += String(accesspoints.getCh(i)) + String(COMMA);                                                    // 1,
+        buf += String(accesspoints.getRSSI(i)) + String(COMMA);                                                  // -30,
+        buf += String(DOUBLEQUOTES) + accesspoints.getEncStr(i) + String(DOUBLEQUOTES) + String(COMMA);          // "wpa2",
+        buf += String(DOUBLEQUOTES) + accesspoints.getMacStr(i) + String(DOUBLEQUOTES) + String(COMMA);          // "00:11:22:00:11:22",
+        buf += String(DOUBLEQUOTES) + accesspoints.getVendorStr(i) + String(DOUBLEQUOTES) + String(COMMA);       // "vendor",
+        buf += b2s(accesspoints.getSelected(i)) + String(CLOSE_BRACKET);                                         // false]
 
-//         if (i < apCount - 1) buf += String(COMMA);                                                               // ,
+        if (i < apCount - 1) buf += String(COMMA);                                                               // ,
 
-//         if (buf.length() >= 1024) {
-//             if (!appendFile(FILE_PATH, buf)) {
-//                 prnt(F_ERROR_SAVING);
-//                 prntln(FILE_PATH);
-//                 return;
-//             }
+        if (buf.length() >= 1024) {
+            if (!file_spiffs::appendFile(FILE_PATH, buf)) {
+                prnt(F_ERROR_SAVING);
+                prntln(FILE_PATH);
+                return;
+            }
 
-//             buf = String(); // clear buffer
-//         }
-//     }
+            buf = String(); // clear buffer
+        }
+    }
 
-//     // Stations
-//     buf += String(CLOSE_BRACKET) + String(COMMA) + String(DOUBLEQUOTES) + str(SC_JSON_STATIONS) + String(DOUBLEQUOTES) +
-//            String(DOUBLEPOINT) + String(OPEN_BRACKET); // ],"stations":[;
-//     uint32_t stationCount = stations.count();
+    // Stations
+    buf += String(CLOSE_BRACKET) + String(COMMA) + String(DOUBLEQUOTES) + str(SC_JSON_STATIONS) + String(DOUBLEQUOTES) +
+           String(DOUBLEPOINT) + String(OPEN_BRACKET); // ],"stations":[;
+    uint32_t stationCount = accesspoints.Stations_count();
 
-//     for (uint32_t i = 0; i < stationCount; i++) {
-//         buf += String(OPEN_BRACKET) + String(DOUBLEQUOTES) + stations.getMacStr(i) + String(DOUBLEQUOTES) +
-//                String(COMMA);                                                                          // ["00:11:22:00:11:22",
-//         buf += String(stations.getCh(i)) + String(COMMA);                                              // 1,
-//         buf += String(DOUBLEQUOTES) + stations.getNameStr(i) + String(DOUBLEQUOTES) + String(COMMA);   // "name",
-//         buf += String(DOUBLEQUOTES) + stations.getVendorStr(i) + String(DOUBLEQUOTES) + String(COMMA); // "vendor",
-//         buf += String(*stations.getPkts(i)) + String(COMMA);                                           // 123,
-//         buf += String(stations.getAP(i)) + String(COMMA);                                              // 0,
-//         buf += String(DOUBLEQUOTES) + stations.getTimeStr(i) + String(DOUBLEQUOTES) + String(COMMA);   // "<1min",
-//         buf += b2s(stations.getSelected(i)) + String(CLOSE_BRACKET);                                   // false]
+    for (uint32_t i = 0; i < stationCount; i++) {
+        buf += String(OPEN_BRACKET) + String(DOUBLEQUOTES) + accesspoints.Stations_getMacStr(i) + String(DOUBLEQUOTES) +
+               String(COMMA);                                                                          // ["00:11:22:00:11:22",
+        buf += String(accesspoints.Stations_getCh(i)) + String(COMMA);                                              // 1,
+        buf += String(DOUBLEQUOTES) + accesspoints.Stations_getNameStr(i) + String(DOUBLEQUOTES) + String(COMMA);   // "name",
+        buf += String(DOUBLEQUOTES) + accesspoints.Stations_getVendorStr(i) + String(DOUBLEQUOTES) + String(COMMA); // "vendor",
+        buf += String(*accesspoints.Stations_getPkts(i)) + String(COMMA);                                           // 123,
+        buf += String(accesspoints.Stations_getAP(i)) + String(COMMA);                                              // 0,
+        buf += String(DOUBLEQUOTES) + accesspoints.Stations_getTimeStr(i) + String(DOUBLEQUOTES) + String(COMMA);   // "<1min",
+        buf += b2s(accesspoints.Stations_getSelected(i)) + String(CLOSE_BRACKET);                                   // false]
 
-//         if (i < stationCount - 1) buf += String(COMMA);                                                // ,
+        if (i < stationCount - 1) buf += String(COMMA);                                                // ,
 
-//         if (buf.length() >= 1024) {
-//             if (!appendFile(FILE_PATH, buf)) {
-//                 prnt(F_ERROR_SAVING);
-//                 prntln(FILE_PATH);
-//                 return;
-//             }
+        if (buf.length() >= 1024) {
+            if (!file_spiffs::appendFile(FILE_PATH, buf)) {
+                prnt(F_ERROR_SAVING);
+                prntln(FILE_PATH);
+                return;
+            }
 
-//             buf = String(); // clear buffer
-//         }
-//     }
+            buf = String(); // clear buffer
+        }
+    }
 
-//     buf += String(CLOSE_BRACKET) + String(CLOSE_CURLY_BRACKET); // ]}
+    buf += String(CLOSE_BRACKET) + String(CLOSE_CURLY_BRACKET); // ]}
 
-//     if (!appendFile(FILE_PATH, buf)) {
-//         prnt(F_ERROR_SAVING);
-//         prntln(FILE_PATH);
-//         return;
-//     }
+    if (!file_spiffs::appendFile(FILE_PATH, buf)) {
+        prnt(F_ERROR_SAVING);
+        prntln(FILE_PATH);
+        return;
+    }
 
-//     accesspoints.changed = false;
-//     stations.changed     = false;
-//     prnt(SC_SAVED_IN);
-//     prntln(FILE_PATH);
-// }
+    accesspoints.changed = false;
+    accesspoints.Stations_changed     = false;
+    prnt(SC_SAVED_IN);
+    prntln(FILE_PATH);
+}

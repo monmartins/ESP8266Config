@@ -2,8 +2,9 @@
 // #include "functions.h"
 #include "config.h"
 #include "web.h"
-// #include "Scan.h"
+#include "Scan.h"
 
+extern Scan   scan; //INclude on .ino
 
 namespace wifi {
     // ===== PRIVATE ===== //
@@ -119,11 +120,11 @@ namespace wifi {
     }
 
     void update() {
-        // if ((mode != wifi_mode_t::off) && !scan.isScanning()) {
+        if ((mode != wifi_mode_t::off) && !scan.isScanning()) {
             web::loopServer();
             web::loopDNS();
             // web::dns.processNextRequest();
-        // }
+        }
     }
 
 

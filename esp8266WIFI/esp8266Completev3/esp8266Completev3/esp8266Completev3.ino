@@ -15,6 +15,7 @@
 #include "file.h"
 
 uint32_t currentTime  = 0;
+Scan   scan;
 
 void setup() {
   Serial.begin(115200);

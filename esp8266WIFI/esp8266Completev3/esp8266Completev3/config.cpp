@@ -1,5 +1,6 @@
 #include "config.h"
 #include "functions.h"
+#include "file.h"
 
 
 namespace config {
@@ -135,12 +136,12 @@ namespace config {
 
             String json_buffer;
             get_json(json_buffer);
-
-            // if (writeFile(SETTINGS_PATH, json_buffer)) {
-            //     debugF("Settings saved in ");
-            // } else {
-            //     debugF("ERROR: saving ");
-            // }
+            
+            if (file_spiffs::writeFile(SETTINGS_PATH,json_buffer)) {
+                debugF("Settings saved in ");
+            } else {
+                debugF("ERROR: saving ");
+            }
 
             debugln(SETTINGS_PATH);
         }

@@ -406,6 +406,45 @@ void Accesspoints::Stations_removeOldest() {
     changed = true;
 }
 
+String Accesspoints::Stations_getNameStr(int num) {
+    if (!Stations_check(num)) return String();
+
+    return Names_find(Stations_getMac(num));
+}
+
+bool Accesspoints::Stations_hasName(int num) {
+    if (!Stations_check(num)) return false;
+
+    return Names_findID(getMac(num)) >= 0;
+}
+
+
+
+String Accesspoints::Stations_getMacStr(int num) {
+    if (!Stations_check(num)) return String();
+
+    uint8_t* mac = Stations_getMac(num);
+
+    return bytesToStr(mac, 6);
+}
+
+String Accesspoints::Stations_getMacVendorStr(int num) {
+    String value;
+
+    if (Stations_check(num)) {
+        value = Stations_getVendorStr(num) + ":";
+        uint8_t* mac = Stations_getMac(num);
+
+        for (int i = 3; i < 6; i++) {
+            if (mac[i] < 0x10) value += "0";
+            value += String(mac[i], HEX);
+
+            if (i < 5) value += ":";
+        }
+    }
+    return value;
+}
+
 uint32_t* Accesspoints::Stations_getPkts(int num) {
     if (!Stations_internal_check(num)) return NULL;
 

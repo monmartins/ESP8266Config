@@ -76,7 +76,6 @@ class Accesspoints {
 
         void Stations_sort();
         void Stations_sortAfterChannel();
-        uint8_t* Stations_getMac(int num);
 
         int Stations_findStation(uint8_t* mac);
 
@@ -97,16 +96,29 @@ class Accesspoints {
         void Stations_removeAll();
         void Stations_removeOldest();
 
-        int Stations_getAP(int num);
-
+        String Stations_getNameStr(int num);
         String Stations_getAPStr(int num);
-
+        String Stations_getMacStr(int num);
+        String Stations_getMacVendorStr(int num);
+        String Stations_getVendorStr(int num);
+        String Stations_getTimeStr(int num);
+        String Stations_getSelectedStr(int num);
+        uint8_t* Stations_getAPMac(int num);
+        String Stations_getAPMacStr(int num);
+        uint8_t* Stations_getMac(int num);
+        uint32_t* Stations_getPkts(int num);
+        uint32_t* Stations_getTime(int num);
+        uint8_t Stations_getCh(int num);
+        int Stations_getAP(int num);
         bool Stations_getSelected(int num);
+        bool Stations_hasName(int num);
+        
+        
 
         void Stations_add(uint8_t* mac, int accesspointNum);
         bool Stations_check(int num);
-        uint32_t* Stations_getPkts(int num);
-        uint32_t* Stations_getTime(int num);
+        
+        bool Stations_changed    = false;
 
         //Device
         int Names_findID(uint8_t* mac);
@@ -115,6 +127,7 @@ class Accesspoints {
         bool Names_check(int num);
         bool Names_internal_check(int num);
         int Names_count(); 
+        bool Device_changed     = false;
 
     private:
         struct Station {
@@ -125,7 +138,6 @@ class Accesspoints {
             uint32_t* time;
             bool      selected;
         };
-        bool Stations_changed    = false;
         bool Stations_internal_check(int num);
         void Stations_internal_select(int num);
         void Stations_internal_deselect(int num);
@@ -141,7 +153,6 @@ class Accesspoints {
             bool     selected; // select for attacking
         };
         String FILE_PATH = "/devices.json";
-        bool Device_changed     = false;
 
         SimpleList<AP>* list;
         SimpleList<Station>* list_Station;
