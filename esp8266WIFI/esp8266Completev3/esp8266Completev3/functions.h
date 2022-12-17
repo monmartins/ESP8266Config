@@ -89,6 +89,13 @@ const char ST_ERROR_ID[] PROGMEM = "ERROR: No station found with ID ";
 const char ST_SELECTED_ALL[] PROGMEM = "Selected all stations";
 const char ST_DESELECTED_ALL[] PROGMEM  = "Deselected all stations";
 
+const char ST_CLEARED_LIST[] PROGMEM = "Cleared station list";
+const char ST_REMOVED_STATION[] PROGMEM = "Removed station ";
+const char ST_LIST_EMPTY[] PROGMEM = "Station list is empty :(";
+const char ST_HEADER[] PROGMEM = "[===== Stations =====]";
+const char ST_NO_DEVICES_SELECTED[] PROGMEM = "No devices selected";
+const char ST_TABLE_HEADER[] PROGMEM = "ID MAC               Ch Name             Vendor   Pkts     AP                               Last Seen Selected";
+
 // ===== ACCESS POINTS ===== //
 const char AP_HEADER[] PROGMEM = "[===== Access Points =====]";
 const char AP_LIST_EMPTY[] PROGMEM = "AP list is empty :(";

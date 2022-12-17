@@ -485,6 +485,59 @@ int Accesspoints::Stations_selected() {
     return num;
 }
 
+void Accesspoints::Stations_printAll() {
+    prntln(ST_HEADER);
+    int c = count();
+
+    if (c == 0) prntln(ST_LIST_EMPTY);
+    else
+        for (int i = 0; i < c; i++) print(i, i == 0, i == c - 1);
+}
+
+void Accesspoints::Stations_printSelected() {
+    prntln(ST_HEADER);
+    int max = Stations_selected();
+    int c   = count();
+
+    if (max == 0) {
+        prntln(ST_NO_DEVICES_SELECTED);
+        return;
+    }
+
+    for (int i = 0, j = 0; i < c && j < max; i++) {
+        if (Stations_getSelected(i)) {
+            print(i, j == 0, j == max - 1);
+            j++;
+        }
+    }
+}
+
+void Accesspoints::Stations_print(int num) {
+    print(num, true, true);
+}
+
+void Accesspoints::Stations_print(int num, bool header, bool footer) {
+    if (!Stations_check(num)) return;
+
+    if (header) {
+        prntln(ST_TABLE_HEADER);
+        prntln(ST_TABLE_DIVIDER);
+    }
+
+    prnt(leftRight(String(), (String)num, 2));
+    prnt(leftRight(String(SPACE) + Stations_getMacStr(num), String(), 18));
+    prnt(leftRight(String(SPACE), (String)Stations_getCh(num), 3));
+    prnt(leftRight(String(SPACE) + Stations_getNameStr(num), String(), 17));
+    prnt(leftRight(String(SPACE) + Stations_getVendorStr(num), String(), 9));
+    prnt(leftRight(String(SPACE), (String) * Stations_getPkts(num), 9));
+    prnt(leftRight(String(SPACE) + Stations_getAPStr(num), String(), 33));
+    prnt(leftRight(String(SPACE) + Stations_getTimeStr(num), String(), 10));
+    prntln(leftRight(String(SPACE) + Stations_getSelectedStr(num), String(), 9));
+
+    if (footer) prntln(ST_TABLE_DIVIDER);
+}
+
+
 
 void Accesspoints::Stations_add(uint8_t* mac, int accesspointNum) {
     int stationNum = Stations_findStation(mac);

@@ -3,6 +3,7 @@
 #include "Arduino.h" //String type
 #include "SimpleList.h"
 #include "functions.h"
+#include "config.h"
 #include "Accesspoints.h"
 
 #define SCAN_MODE_OFF 0
@@ -33,8 +34,8 @@ class Scan {
         void start(uint8_t mode, uint32_t time, uint8_t nextmode, uint32_t continueTime, bool channelHop, uint8_t channel);
         void start(uint8_t mode);
 
-        // void setup();
-        // void update();
+        void setup();
+        void update();
         void stop();
         void save(bool force);
         void save(bool force, String filePath);
@@ -44,15 +45,15 @@ class Scan {
         // void printAll();
         // void printSelected();
 
-        // uint8_t getPercentage();
+        uint8_t getPercentage();
         // uint32_t getPackets(int i);
         // uint32_t countAll();
         // uint32_t countSelected();
         bool isScanning();
         bool isSniffing();
 
-        // void nextChannel();
-        // void setChannel(uint8_t newChannel);
+        void nextChannel();
+        void setChannel(uint8_t newChannel);
 
         // String getMode();
         // double getScaleFactor(uint8_t height);

@@ -222,5 +222,8 @@ namespace config {
     void reset();
     void print();
 
+    const sniffer_settings_t& getSnifferSettings();
+    
+
 
 }

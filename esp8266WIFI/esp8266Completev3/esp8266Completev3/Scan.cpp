@@ -12,6 +12,116 @@ extern Accesspoints accesspoints;
 Scan::Scan() {
     list = new SimpleList<uint16_t>;
 }
+void Scan::setup() {
+    save(true);
+}
+
+uint8_t Scan::getPercentage() {
+    if (!isSniffing()) return 0;
+
+    return (currentTime - snifferStartTime) / (sniffTime / 100);
+}
+
+void Scan::update() {
+    if (scanMode == SCAN_MODE_OFF) {
+        // restart scan if it is continuous
+        if (scan_continue_mode != SCAN_MODE_OFF) {
+            if (currentTime - continueStartTime > continueTime) start(scan_continue_mode);
+        }
+        return;
+    }
+
+    // sniffer
+    if (isSniffing()) {
+        // update packet list every 1s
+        if (currentTime - snifferPacketTime > 1000) {
+            snifferPacketTime = currentTime;
+            list->add(packets);
+
+            if (list->size() > SCAN_PACKET_LIST_SIZE) list->remove(0);
+            deauths    = tmpDeauths;
+            tmpDeauths = 0;
+            packets    = 0;
+        }
+
+        // print status every 3s
+        if (currentTime - snifferOutputTime > 3000) {
+            char s[100];
+
+            if (sniffTime > 0) {
+                sprintf(s, str(SC_OUTPUT_A).c_str(), getPercentage(), packets, accesspoints.Stations_count(), deauths);
+            } else {
+                sprintf(s, str(SC_OUTPUT_B).c_str(), packets, accesspoints.Stations_count(), deauths);
+            }
+            prnt(String(s));
+            snifferOutputTime = currentTime;
+        }
+
+        // channel hopping
+        if (channelHop && (currentTime - snifferChannelTime > config::getSnifferSettings().channel_time)) {
+            snifferChannelTime = currentTime;
+
+            if (scanMode == SCAN_MODE_STATIONS) nextChannel();  // go to next channel an AP is on
+            else setChannel(wifi_channel + 1);                  // go to next channel
+        }
+    }
+
+    // APs
+    if ((scanMode == SCAN_MODE_APS) || (scanMode == SCAN_MODE_ALL)) {
+        int16_t results = WiFi.scanComplete();
+
+        if (results >= 0) {
+            for (int16_t i = 0; i < results && i < 256; i++) {
+                if (channelHop || (WiFi.channel(i) == wifi_channel)) accesspoints.add(i, false);
+            }
+            accesspoints.sort();
+            accesspoints.printAll();
+
+            if (scanMode == SCAN_MODE_ALL) {
+                delay(30);
+                start(SCAN_MODE_STATIONS);
+            }
+            else start(SCAN_MODE_OFF);
+        }
+    }
+
+    // Stations
+    else if ((sniffTime > 0) && (currentTime > snifferStartTime + sniffTime)) {
+        wifi_promiscuous_enable(false);
+
+        if (scanMode == SCAN_MODE_STATIONS) {
+            accesspoints.Stations_sort();
+            accesspoints.Stations_printAll();
+        }
+        start(SCAN_MODE_OFF);
+    }
+}
+void Scan::setChannel(uint8_t ch) {
+    if (ch > 14) ch = 1;
+    else if (ch < 1) ch = 14;
+
+    wifi_promiscuous_enable(0);
+    setWifiChannel(ch, true);
+    wifi_promiscuous_enable(1);
+}
+void Scan::nextChannel() {
+    if (accesspoints.count() > 1) {
+        uint8_t ch = wifi_channel;
+
+        do {
+            ch++;
+
+            if (ch > 14) ch = 1;
+        } while (!apWithChannel(ch));
+        setChannel(ch);
+    }
+}
+bool Scan::apWithChannel(uint8_t ch) {
+    for (int i = 0; i < accesspoints.count(); i++)
+        if (accesspoints.getCh(i) == ch) return true;
+
+    return false;
+}
 
 bool Scan::isScanning() {
     return scanMode != SCAN_MODE_OFF;

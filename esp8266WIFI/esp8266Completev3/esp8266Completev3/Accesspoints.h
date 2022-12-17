@@ -113,6 +113,11 @@ class Accesspoints {
         bool Stations_getSelected(int num);
         bool Stations_hasName(int num);
         
+        void Stations_print(int num);
+        void Stations_print(int num, bool header, bool footer);
+        void Stations_printAll();
+        void Stations_printSelected();
+        
         
 
         void Stations_add(uint8_t* mac, int accesspointNum);

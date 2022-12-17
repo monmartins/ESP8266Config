@@ -163,4 +163,8 @@ namespace config {
         debuglnF("[========== Settings ==========]");
         debugln(json_buffer);
     }
+    
+    const sniffer_settings_t& getSnifferSettings() {
+        return data.sniffer;
+    }
 }
