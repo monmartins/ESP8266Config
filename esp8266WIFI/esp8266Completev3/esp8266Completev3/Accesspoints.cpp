@@ -1,10 +1,13 @@
 
+
 #include "Accesspoints.h"
+#include "file.h"
 
 Accesspoints::Accesspoints() {
     list = new SimpleList<AP>;
     list_Station = new SimpleList<Station>;
     list_Device = new SimpleList<Device>;
+    list_SSID =  new SimpleList<SSID>;
 }
 
 void Accesspoints::sort() {
@@ -409,13 +412,13 @@ void Accesspoints::Stations_removeOldest() {
 String Accesspoints::Stations_getNameStr(int num) {
     if (!Stations_check(num)) return String();
 
-    return Names_find(Stations_getMac(num));
+    return Device_find(Stations_getMac(num));
 }
 
 bool Accesspoints::Stations_hasName(int num) {
     if (!Stations_check(num)) return false;
 
-    return Names_findID(getMac(num)) >= 0;
+    return Device_findID(getMac(num)) >= 0;
 }
 
 
@@ -608,8 +611,10 @@ void Accesspoints::Stations_internal_removeAll() {
     list_Station->clear();
 }
 
+// Device 
 
-int Accesspoints::Names_findID(uint8_t* mac) {
+
+int Accesspoints::Device_findID(uint8_t* mac) {
     for (int i = 0; i < list_Device->size(); i++) {
         if (memcmp(mac, list_Device->get(i).mac, 6) == 0) return i;
     }
@@ -617,28 +622,505 @@ int Accesspoints::Names_findID(uint8_t* mac) {
     return -1;
 }
 
-String Accesspoints::Names_find(uint8_t* mac) {
-    int num = Names_findID(mac);
+String Accesspoints::Device_find(uint8_t* mac) {
+    int num = Device_findID(mac);
 
-    if (num >= 0) return Names_getName(num);
+    if (num >= 0) return Device_getName(num);
     else return String();
 }
 
-String Accesspoints::Names_getName(int num) {
-    if (!Names_check(num)) return String();
+String Accesspoints::Device_getName(int num) {
+    if (!Device_check(num)) return String();
 
     return String(list_Device->get(num).name);
 }
-bool Accesspoints::Names_check(int num) {
-    if (Names_internal_check(num)) return true;
+bool Accesspoints::Device_check(int num) {
+    if (Device_internal_check(num)) return true;
 
     prnt(N_ERROR_NOT_FOUND);
     prntln(num);
     return false;
 }
-bool Accesspoints::Names_internal_check(int num) {
-    return num >= 0 && num < Names_count();
-}
-int Accesspoints::Names_count() {
+int Accesspoints::Device_count() {
     return list_Device->size();
+}
+
+void Accesspoints::Device_load() {
+    Device_internal_removeAll();
+
+    DynamicJsonDocument jsonBuffer(4000);
+    // DynamicJsonBuffer jsonBuffer(4000);
+
+    file_spiffs::checkFile(DEVICE_FILE_PATH, String(OPEN_BRACKET) + String(CLOSE_BRACKET));
+    
+    JsonArray arr = parseJSONFile(DEVICE_FILE_PATH, jsonBuffer);
+
+    // for (uint32_t i = 0; i < arr.size() && i < DEVICE_LIST_SIZE; i++) {
+    //     JsonArray tmpArray = arr.get<JsonVariant>(i);
+    //     Device_internal_add(tmpArray.get<String>(0), tmpArray.get<String>(2), tmpArray.get<String>(3), tmpArray.get<uint8_t>(4), false);
+    //     Device_sort();
+    // }
+    for(JsonArray v : arr) {
+        Device_internal_add(v[0].as<String>(), v[2].as<String>(), v[3].as<String>(), v[4].as<uint8_t>(), false);
+        Device_sort();
+    }
+
+    prnt(N_LOADED);
+    prntln(DEVICE_FILE_PATH);
+}
+
+void Accesspoints::Device_load(String filepath) {
+    String tmp = DEVICE_FILE_PATH;
+
+    DEVICE_FILE_PATH = filepath;
+    Device_load();
+    DEVICE_FILE_PATH = tmp;
+}
+
+void Accesspoints::Device_save(bool force) {
+    if (!Device_force && !Device_changed) {
+        return;
+
+        prntln(N_SAVED);
+    }
+
+    String buf = String(OPEN_BRACKET); // [
+
+    if (!file_spiffs::writeFile(DEVICE_FILE_PATH, buf)) {
+        prnt(F_ERROR_SAVING);
+        prntln(DEVICE_FILE_PATH);
+        return;
+    }
+
+    buf = String();
+
+    String name;
+    int    c = Device_count();
+
+    for (int i = 0; i < c; i++) {
+        name = escape(Device_getName(i));
+
+        buf += String(OPEN_BRACKET) + String(DOUBLEQUOTES) + Device_getMacStr(i) + String(DOUBLEQUOTES) + String(COMMA); // ["00:11:22:00:11:22",
+        buf += String(DOUBLEQUOTES) + Device_getVendorStr(i) + String(DOUBLEQUOTES) + String(COMMA);                     // "vendor",
+        buf += String(DOUBLEQUOTES) + name + String(DOUBLEQUOTES) + String(COMMA);                                // "name",
+        buf += String(DOUBLEQUOTES) + Device_getBssidStr(i) + String(DOUBLEQUOTES) + String(COMMA);                      // "00:11:22:00:11:22",
+        buf += String(Device_getCh(i)) + String(COMMA);                                                                  // 1,
+        buf += b2s(Device_getSelected(i)) + String(CLOSE_BRACKET);                                                       // false]
+
+        if (i < c - 1) buf += COMMA;                                                                              // ,
+
+        if (buf.length() >= 1024) {
+            if (!file_spiffs::appendFile(DEVICE_FILE_PATH, buf)) {
+                prnt(F_ERROR_SAVING);
+                prntln(DEVICE_FILE_PATH);
+                return;
+            }
+
+            buf = String();
+        }
+    }
+
+    buf += String(CLOSE_BRACKET); // ]
+
+    if (!file_spiffs::appendFile(DEVICE_FILE_PATH, buf)) {
+        prnt(F_ERROR_SAVING);
+        prntln(DEVICE_FILE_PATH);
+        return;
+    }
+
+    prnt(N_SAVED);
+    prntln(DEVICE_FILE_PATH);
+    changed = false;
+}
+
+void Accesspoints::Device_save(bool force, String filepath) {
+    String tmp = DEVICE_FILE_PATH;
+
+    DEVICE_FILE_PATH = filepath;
+    Device_save(force);
+    DEVICE_FILE_PATH = tmp;
+}
+
+void Accesspoints::Device_sort() {
+    list_Device->setCompare([](Device& a, Device& b) -> int {
+        return memcmp(a.mac, b.mac, 6);
+    });
+    list_Device->sort();
+}
+
+void Accesspoints::Device_removeAll() {
+    Device_internal_removeAll();
+    prntln(N_REMOVED_ALL);
+    changed = true;
+}
+
+bool Accesspoints::Device_internal_check(int num) {
+    return num >= 0 && num < Device_count();
+}
+
+
+void Accesspoints::Device_internal_add(uint8_t* mac, String name, uint8_t* bssid, uint8_t ch, bool selected) {
+    uint8_t* deviceMac = (uint8_t*)malloc(6);
+
+    if (name.length() > DEVICE_MAX_LENGTH) name = name.substring(0, DEVICE_MAX_LENGTH);
+    char* deviceName     = (char*)malloc(name.length() + 1);
+    uint8_t* deviceBssid = NULL;
+
+    name = fixUtf8(name);
+
+    memcpy(deviceMac, mac, 6);
+    strcpy(deviceName, name.c_str());
+
+    if (bssid) {
+        deviceBssid = (uint8_t*)malloc(6);
+        memcpy(deviceBssid, bssid, 6);
+    }
+
+    if ((ch < 1) || (ch > 14)) ch = 1;
+
+    Device newDevice;
+
+    newDevice.mac      = deviceMac;
+    newDevice.name     = deviceName;
+    newDevice.apBssid  = deviceBssid;
+    newDevice.ch       = ch;
+    newDevice.selected = selected;
+
+    list_Device->add(newDevice);
+}
+
+void Accesspoints::Device_internal_add(String macStr, String name, String bssidStr, uint8_t ch, bool selected) {
+    uint8_t mac[6];
+
+    if (!strToMac(macStr, mac)) return;
+
+    if (bssidStr.length() == 17) {
+        uint8_t bssid[6];
+        strToMac(bssidStr, bssid);
+        Device_internal_add(mac, name, bssid, ch, selected);
+    } else {
+        Device_internal_add(mac, name, NULL, ch, selected);
+    }
+}
+//SSID
+
+void Accesspoints::SSIDS_load() {
+    SSIDS_internal_removeAll();
+
+    DynamicJsonDocument jsonBuffer(4000);
+    // DynamicJsonBuffer jsonBuffer(4000);
+
+    file_spiffs::checkFile(SSIDS_FILE_PATH, str(SS_JSON_DEFAULT));
+    JsonObject obj = parseJSONFile(SSIDS_FILE_PATH, jsonBuffer);
+    // JsonArray arr = obj.get<JsonArray>(str(SS_JSON_SSIDS));
+
+    JsonArray arr = obj[str(SS_JSON_SSIDS)].as<JsonArray>();
+
+    // for (uint32_t i = 0; i < arr.size() && i < SSID_LIST_SIZE; i++) {
+    //     JsonArray& tmpArray = arr.get<JsonVariant>(i);
+    //     SSIDS_internal_add(tmpArray.get<String>(0), tmpArray.get<bool>(1), tmpArray.get<int>(2));
+    // }
+
+    for(JsonArray v : arr) {
+        SSIDS_internal_add(v[0].as<String>(), v[1].as<bool>(), v[2].as<int>());
+        Device_sort();
+    }
+
+    prnt(SS_LOADED);
+    prntln(SSIDS_FILE_PATH);
+}
+
+void Accesspoints::SSIDS_load(String filepath) {
+    String tmp = SSIDS_FILE_PATH;
+
+    SSIDS_FILE_PATH = filepath;
+    SSIDS_load();
+    SSIDS_FILE_PATH = tmp;
+}
+
+void Accesspoints::SSIDS_removeAll() {
+    SSIDS_internal_removeAll();
+    prntln(SS_CLEARED);
+    SSIDS_changed = true;
+}
+
+void Accesspoints::SSIDS_save(bool force) {
+    if (!force && !SSIDS_changed) return;
+
+    String buf = String();                              // create buffer
+
+    buf += String(OPEN_CURLY_BRACKET) + String(DOUBLEQUOTES) + str(SS_JSON_RANDOM) + String(DOUBLEQUOTES) + String(
+        DOUBLEPOINT) + b2s(SSIDS_randomMode) + String(COMMA); // {"random":false,
+    buf += String(DOUBLEQUOTES) + str(SS_JSON_SSIDS) + String(DOUBLEQUOTES) + String(DOUBLEPOINT) +
+           String(OPEN_BRACKET);                        // "ssids":[
+
+    if (!file_spiffs::writeFile(SSIDS_FILE_PATH, buf)) {
+        prnt(F_ERROR_SAVING);
+        prntln(SSIDS_FILE_PATH);
+        return;
+    }
+    buf = String(); // clear buffer
+
+    String name;
+    int    c = SSIDS_count();
+
+    for (int i = 0; i < c; i++) {
+        name = escape(SSIDS_getName(i));
+
+        buf += String(OPEN_BRACKET) + String(DOUBLEQUOTES) + name + String(DOUBLEQUOTES) + String(COMMA); // ["name",
+        buf += b2s(SSIDS_getWPA2(i)) + String(COMMA);                                                           // false,
+        buf += String(SSIDS_getLen(i)) + String(CLOSE_BRACKET);                                                 // 12]
+
+        if (i < c - 1) buf += COMMA;                                                                      // ,
+
+        if (buf.length() >= 1024) {
+            if (!file_spiffs::appendFile(SSIDS_FILE_PATH, buf)) {
+                prnt(F_ERROR_SAVING);
+                prntln(SSIDS_FILE_PATH);
+                return;
+            }
+
+            buf = String(); // clear buffer
+        }
+    }
+
+    buf += String(CLOSE_BRACKET) + String(CLOSE_CURLY_BRACKET); // ]}
+
+    if (!file_spiffs::appendFile(SSIDS_FILE_PATH, buf)) {
+        prnt(F_ERROR_SAVING);
+        prntln(SSIDS_FILE_PATH);
+        return;
+    }
+
+    prnt(SS_SAVED_IN);
+    prntln(SSIDS_FILE_PATH);
+    SSIDS_changed = false;
+}
+
+void Accesspoints::SSIDS_save(bool force, String filepath) {
+    String tmp = SSIDS_FILE_PATH;
+
+    SSIDS_FILE_PATH = filepath;
+    SSIDS_save(force);
+    SSIDS_FILE_PATH = tmp;
+}
+
+void Accesspoints::SSIDS_update() {
+    if (SSIDS_randomMode) {
+        if (currentTime - SSIDS_randomTime > SSIDS_randomInterval * 1000) {
+            prntln(SS_RANDOM_INFO);
+
+            for (int i = 0; i < SSID_LIST_SIZE; i++) {
+                SSID newSSID;
+
+                if (SSIDS_check(i)) newSSID = list_SSID->get(i);
+
+                newSSID.name = String();
+                newSSID.len  = 32;
+
+                for (int i = 0; i < 32; i++) newSSID.name += char(random(32, 127));
+
+                newSSID.wpa2 = random(0, 2);
+
+                if (SSIDS_check(i)) list_SSID->replace(i, newSSID);
+                else list_SSID->add(newSSID);
+            }
+
+            SSIDS_randomTime = currentTime;
+            SSIDS_changed    = true;
+        }
+    }
+}
+
+String Accesspoints::SSIDS_getName(int num) {
+    return SSIDS_check(num) ? list_SSID->get(num).name : String();
+}
+
+bool Accesspoints::SSIDS_getWPA2(int num) {
+    return SSIDS_check(num) ? list_SSID->get(num).wpa2 : false;
+}
+
+int Accesspoints::SSIDS_getLen(int num) {
+    return SSIDS_check(num) ? list_SSID->get(num).len : 0;
+}
+
+void Accesspoints::SSIDS_setWPA2(int num, bool wpa2) {
+    SSID newSSID = list_SSID->get(num);
+
+    newSSID.wpa2 = wpa2;
+    list_SSID->replace(num, newSSID);
+}
+
+String Accesspoints::SSIDS_getEncStr(int num) {
+    if (SSIDS_getWPA2(num)) return "WPA2";
+    else return "-";
+}
+
+void Accesspoints::SSIDS_remove(int num) {
+    if (!SSIDS_check(num)) return;
+
+    SSIDS_internal_remove(num);
+    prnt(SS_REMOVED);
+    prntln(SSIDS_getName(num));
+    SSIDS_changed = true;
+}
+
+String Accesspoints::SSIDS_randomize(String name) {
+    int ssidlen = name.length();
+
+    if (ssidlen > 32) name = name.substring(0, 32);
+
+    if (ssidlen < 32) {
+        for (int i = ssidlen; i < 32; i++) {
+            int rnd = random(3);
+
+            if ((i < 29) && (rnd == 0)) { // ZERO WIDTH SPACE
+                name += char(0xE2);
+                name += char(0x80);
+                name += char(0x8B);
+                i    += 2;
+            } else if ((i < 30) && (rnd == 1)) { // NO-BREAK SPACE
+                name += char(0xC2);
+                name += char(0xA0);
+                i    += 1;
+            } else {
+                name += char(0x20); // SPACE
+            }
+        }
+    }
+    return name;
+}
+
+void Accesspoints::SSIDS_add(String name, bool wpa2, int clones, bool force) {
+    if (list_SSID->size() >= SSID_LIST_SIZE) {
+        if (force) {
+            SSIDS_internal_remove(0);
+        } else {
+            prntln(SS_ERROR_FULL);
+            return;
+        }
+    }
+
+    if (clones > SSID_LIST_SIZE) clones = SSID_LIST_SIZE;
+
+    for (int i = 0; i < clones; i++) {
+        SSIDS_internal_add(clones > 1 ? SSIDS_randomize(name) : name, wpa2, name.length());
+
+        if (list_SSID->size() > SSID_LIST_SIZE) SSIDS_internal_remove(0);
+    }
+
+    prnt(SS_ADDED);
+    prntln(name);
+    SSIDS_changed = true;
+}
+
+void Accesspoints::SSIDS_cloneSelected(bool force) {
+    if (selected() > 0) { //accesspoints.selected()
+        int clones = SSID_LIST_SIZE;
+
+        if (!force) clones -= list_SSID->size();
+        clones /= selected();
+
+        int apCount = count();
+
+        for (int i = 0; i < apCount; i++) {
+            if (getSelected(i)) SSIDS_add(getSSID(i), getEnc(i) != 0, clones, force);
+        }
+    }
+}
+
+bool Accesspoints::SSIDS_getRandom() {
+    return SSIDS_randomMode;
+}
+
+void Accesspoints::SSIDS_replace(int num, String name, bool wpa2) {
+    if (!SSIDS_check(num)) return;
+
+    int len = name.length();
+
+    if (len > 32) len = 32;
+    SSID newSSID;
+
+    newSSID.name = SSIDS_randomize(name);
+    newSSID.wpa2 = wpa2;
+    newSSID.len  = (uint8_t)len;
+    list_SSID->replace(num, newSSID);
+
+    prnt(SS_REPLACED);
+    prntln(name);
+    SSIDS_changed = true;
+}
+
+void Accesspoints::SSIDS_print(int num) {
+    SSIDS_print(num, true, false);
+}
+
+void Accesspoints::SSIDS_print(int num, bool header, bool footer) {
+    if (!SSIDS_check(num)) return;
+
+    if (header) {
+        prntln(SS_TABLE_HEADER);
+        prntln(SS_TABLE_DIVIDER);
+    }
+
+    prnt(leftRight(String(), (String)num, 2));
+    prnt(leftRight(String(SPACE), SSIDS_getEncStr(num), 5));
+    prntln(leftRight(String(SPACE) + SSIDS_getName(num), String(), 33));
+
+    if (footer) prntln(SS_TABLE_DIVIDER);
+}
+
+void Accesspoints::SSIDS_printAll() {
+    prntln(SS_HEADER);
+    int c = SSIDS_count();
+
+    if (c == 0) prntln(SS_ERROR_EMPTY);
+    else
+        for (int i = 0; i < c; i++) print(i, i == 0, i == c - 1);
+}
+
+int Accesspoints::SSIDS_count() {
+    return list_SSID->size();
+}
+
+bool Accesspoints::SSIDS_check(int num) {
+    return num >= 0 && num < count();
+}
+
+void Accesspoints::SSIDS_enableRandom(uint32_t randomInterval) {
+    SSIDS_randomMode            = true;
+    SSIDS_randomInterval = randomInterval;
+    prntln(SS_RANDOM_ENABLED);
+    SSIDS_update();
+}
+
+void Accesspoints::SSIDS_disableRandom() {
+    SSIDS_randomMode = false;
+    SSIDS_internal_removeAll();
+    prntln(SS_RANDOM_DISABLED);
+}
+
+void Accesspoints::SSIDS_internal_add(String name, bool wpa2, int len) {
+    if (len > 32) {
+        name = name.substring(0, 32);
+        len  = 32;
+    }
+
+    name = fixUtf8(name);
+
+    SSID newSSID;
+
+    newSSID.name = name;
+    newSSID.wpa2 = wpa2;
+    newSSID.len  = (uint8_t)len;
+
+    list_SSID->add(newSSID);
+}
+
+void Accesspoints::SSIDS_internal_remove(int num) {
+    list_SSID->remove(num);
+}
+
+void Accesspoints::SSIDS_internal_removeAll() {
+    list_SSID->clear();
 }

@@ -8,6 +8,8 @@ extern "C" {
   #include "user_interface.h" //wifi_set_channel
 }
 
+#include <ArduinoJson.h>
+
 /*
    Here is a collection of useful functions and variables.
    They are used globally via an 'extern' reference in every class.
@@ -152,6 +154,27 @@ const char SC_MODE_AP[] PROGMEM = "APs";
 const char SC_MODE_ST[] PROGMEM = "STs";
 const char SC_MODE_ALL[] PROGMEM = "AP+ST";
 const char SC_MODE_SNIFFER[] PROGMEM = "Sniffer";
+// ===== SSIDs ===== //
+const char SS_LOADED[] PROGMEM = "SSIDs loaded from ";
+const char SS_CLEARED[] PROGMEM = "Cleared SSID list";
+const char SS_SAVED[] PROGMEM = "SSIDs saved";
+const char SS_SAVED_IN[] PROGMEM = "SSIDs saved in ";
+const char SS_REMOVED[] PROGMEM = "Removed SSID ";
+const char SS_ERROR_FULL[] PROGMEM =
+    "ERROR: SSID list is full! Remove some SSIDs first or run command with -f (force) parameter.";
+const char SS_ADDED[] PROGMEM = "Added SSID ";
+const char SS_REPLACED[] PROGMEM = "Replaced SSID ";
+const char SS_TABLE_HEADER[] PROGMEM = "ID Enc. SSID";
+const char SS_TABLE_DIVIDER[] PROGMEM = "=========================================";
+const char SS_HEADER[] PROGMEM = "[===== SSIDs =====]";
+const char SS_ERROR_EMPTY[] PROGMEM = "SSID list is empty :(";
+const char SS_RANDOM_ENABLED[] PROGMEM = "SSID random mode enabled";
+const char SS_RANDOM_DISABLED[] PROGMEM = "SSID random mode deactivated";
+const char SS_JSON_SSIDS[] PROGMEM = "ssids";
+const char SS_JSON_RANDOM[] PROGMEM = "random";
+const char SS_JSON_DEFAULT[] PROGMEM = "{\"random\":false,\"ssids\":[[\"Never gonna give you up\",false,23],[\"Never gonna let you down\",false,24],[\"Never gonna run around\",false,22],[\"Never gonna make you cry\",false,24],[\"Never gonna say goodbye\",false,23],[\"Never gonna tell a lie\",false,22],[\"Never gonna hurt you\",false,20],[\"Never gonna desert you\",false,22]]}";
+const char SS_RANDOM_INFO[] PROGMEM = "Generating new SSIDs... Type \"disable random\" to stop the random mode";
+
 
 // ===== SETTINGS ====== //
 // Version
@@ -316,6 +339,8 @@ String left(String a, int len);
 String right(String a, int len);
 
 String leftRight(String a, String b, int len);
+
+JsonVariant parseJSONFile(String path, DynamicJsonDocument& jsonBuffer);
 
 // /* ===== SPIFFS ===== */
 // bool progmemToSpiffs(const char* adr, int len, String path) {
@@ -518,34 +543,7 @@ String leftRight(String a, String b, int len);
 //     return true;
 // }
 
-// JsonVariant parseJSONFile(String path, DynamicJsonBuffer& jsonBuffer) {
-//     if (path.charAt(0) != SLASH) path = String(SLASH) + path;
 
-//     // create JSON Variant
-//     JsonVariant root;
-
-//     // create buffer
-//     String buf = "";
-
-//     // read file into buffer
-//     if (!readFile(path, buf)) { // if file couldn't be opened, send 404 error
-//         prnt(F_ERROR_OPEN);
-//         prntln(path);
-//         buf = "{}";
-//     }
-
-//     // parse file-buffer into a JSON Variant
-//     root = jsonBuffer.parse(buf);
-
-//     // if parsing unsuccessful
-//     if (!root.success()) {
-//         prnt(F_ERROR_PARSING_JSON);
-//         prntln(path);
-//         prntln(buf);
-//     }
-
-//     return root;
-// }
 
 // bool removeFile(String path) {
 //     if (path.charAt(0) != SLASH) path = String(SLASH) + path;

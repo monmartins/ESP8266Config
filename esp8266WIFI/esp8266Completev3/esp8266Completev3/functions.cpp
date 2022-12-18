@@ -1,4 +1,5 @@
 #include "functions.h"
+#include "file.h"
 
 /*
    Here is a collection of useful functions and variables.
@@ -559,7 +560,7 @@ String leftRight(String a, String b, int len) {
 //     return true;
 // }
 
-// bool readFile(String path, String& buf) {
+// bool file_spiffs::readFile(String path, String& buf) {
 //     if (path.charAt(0) != SLASH) path = String(SLASH) + path;
 //     File f = LittleFS.open(path, "r");
 
@@ -574,7 +575,7 @@ String leftRight(String a, String b, int len) {
 //     return true;
 // }
 
-// void readFileToSerial(String path, bool showLineNum) {
+// void file_spiffs::readFileToSerial(String path, bool showLineNum) {
 //     if (path.charAt(0) != SLASH) path = String(SLASH) + path;
 //     File f = LittleFS.open(path, "r");
 
@@ -750,7 +751,7 @@ String leftRight(String a, String b, int len) {
 //     String buf = "";
 
 //     // read file into buffer
-//     if (!readFile(path, buf)) { // if file couldn't be opened, send 404 error
+//     if (!file_spiffs::readFile(path, buf)) { // if file couldn't be opened, send 404 error
 //         prnt(F_ERROR_OPEN);
 //         prntln(path);
 //         buf = "{}";
@@ -815,6 +816,39 @@ String leftRight(String a, String b, int len) {
 //     // write buffer into SPIFFS file
 //     writeFile(path, buf);
 // }
+JsonVariant parseJSONFile(String path, DynamicJsonDocument& jsonBuffer) {
+    if (path.charAt(0) != SLASH) path = String(SLASH) + path;
+
+    // create JSON Variant
+    JsonVariant root = jsonBuffer.to<JsonVariant>();
+
+    // create buffer
+    String buf = "";
+
+    // read file into buffer
+    if (!file_spiffs::readFile(path, buf)) { // if file couldn't be opened, send 404 error
+        prnt(F_ERROR_OPEN);
+        prntln(path);
+        buf = "{}";
+    }
+
+    // parse file-buffer into a JSON Variant
+    // root = jsonBuffer.parse(buf);
+    // root = deserializeJson(buf);
+    root.set(buf);
+    // serializeJson(root, buf);
+
+    // if parsing unsuccessful
+    
+    // if (!root.success()) {
+    if (root.isNull()) {
+        prnt(F_ERROR_PARSING_JSON);
+        prntln(path);
+        prntln(buf);
+    }
+
+    return root;
+}
 
 String formatBytes(size_t bytes) {
     if (bytes < 1024) return String(bytes) + "B";

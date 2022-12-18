@@ -40,10 +40,10 @@ class Scan {
         void save(bool force);
         void save(bool force, String filePath);
 
-        // void selectAll();
-        // void deselectAll();
-        // void printAll();
-        // void printSelected();
+        void selectAll();
+        void deselectAll();
+        void printAll();
+        void printSelected();
 
         uint8_t getPercentage();
         // uint32_t getPackets(int i);

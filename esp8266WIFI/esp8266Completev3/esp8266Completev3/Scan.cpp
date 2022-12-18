@@ -367,3 +367,29 @@ void Scan::save(bool force) {
     prnt(SC_SAVED_IN);
     prntln(FILE_PATH);
 }
+
+void Scan::selectAll() {
+    accesspoints.selectAll();
+    accesspoints.Stations_selectAll();
+    accesspoints.Device_selectAll();
+}
+
+void Scan::deselectAll() {
+    accesspoints.deselectAll();
+    accesspoints.Stations_deselectAll();
+    accesspoints.Device_deselectAll();
+}
+
+void Scan::printAll() {
+    accesspoints.printAll();
+    accesspoints.Stations_printAll();
+    accesspoints.Device_printAll();
+    accesspoints.SSIDS_printAll();
+    // ssids.printAll();
+}
+
+void Scan::printSelected() {
+    accesspoints.printSelected();
+    accesspoints.Stations_printSelected();
+    accesspoints.Device_printSelected();
+}
