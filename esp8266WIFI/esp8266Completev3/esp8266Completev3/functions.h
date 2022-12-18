@@ -214,6 +214,16 @@ const char S_JSON_CAPTIVEPORTAL[] PROGMEM = "captivePortal";
 const char S_JSON_WEB_SPIFFS[] PROGMEM = "webSpiffs";
 const char S_JSON_LANG[] PROGMEM = "lang";
 
+// ===== ATTACKS ===== //
+const char A_START[] PROGMEM = "Start attacking";
+const char A_NO_MODE_ERROR[] PROGMEM = "WARNING: No valid attack mode set";
+const char A_STOP[] PROGMEM = "Stopped attacking";
+const char A_TIMEOUT[] PROGMEM = "Timeout - ";
+const char A_STATUS[] PROGMEM = "[Pkt/s] All: %+4u | Deauths: %+3u/%-3u | Beacons: %+3u/%-3u | Probes: %+3u/%-3u\r\n";
+const char A_ENABLED_OUTPUT[] PROGMEM = "Enabled attack output";
+const char A_DISABLED_OUTPUT[] PROGMEM = "Disabled attack output";
+
+
 #define debug_init()\
     DEBUG_PORT.begin(DEBUG_BAUD);\
     DEBUG_PORT.setTimeout(LONG_MAX);\

@@ -46,19 +46,19 @@ class Scan {
         void printSelected();
 
         uint8_t getPercentage();
-        // uint32_t getPackets(int i);
-        // uint32_t countAll();
-        // uint32_t countSelected();
+        uint32_t getPackets(int i);
+        uint32_t countAll();
+        uint32_t countSelected();
         bool isScanning();
         bool isSniffing();
 
         void nextChannel();
         void setChannel(uint8_t newChannel);
 
-        // String getMode();
-        // double getScaleFactor(uint8_t height);
-        // uint32_t getMaxPacket();
-        // uint32_t getPacketRate();
+        String getMode();
+        double getScaleFactor(uint8_t height);
+        uint32_t getMaxPacket();
+        uint32_t getPacketRate();
 
         uint16_t deauths = 0;
         uint16_t packets = 0;

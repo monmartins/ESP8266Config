@@ -164,7 +164,76 @@ namespace config {
         debugln(json_buffer);
     }
     
+
+    // ===== GETTERS ===== //
+
+    const settings_t& getAllSettings() {
+        return data;
+    }
+
+    const version_t& getVersion() {
+        return data.version;
+    }
+
+    const autosave_settings_t& getAutosaveSettings() {
+        return data.autosave;
+    }
+
+    const attack_settings_t& getAttackSettings() {
+        return data.attack;
+    }
+
+    const wifi_settings_t& getWifiSettings() {
+        return data.wifi;
+    }
+
     const sniffer_settings_t& getSnifferSettings() {
         return data.sniffer;
+    }
+
+    const access_point_settings_t& getAccessPointSettings() {
+        return data.ap;
+    }
+
+    const web_settings_t& getWebSettings() {
+        return data.web;
+    }
+
+    // ===== SETTERS ===== //
+
+    void setAllSettings(settings_t& newSettings) {
+        newSettings.version = data.version;
+        data                = newSettings;
+        changed             = true;
+    }
+
+    void setAutosaveSettings(const autosave_settings_t& autosave) {
+        data.autosave = autosave;
+        changed       = true;
+    }
+
+    void setAttackSettings(const attack_settings_t& attack) {
+        data.attack = attack;
+        changed     = true;
+    }
+
+    void setWifiSettings(const wifi_settings_t& wifi) {
+        data.wifi = wifi;
+        changed   = true;
+    }
+
+    void setSnifferSettings(const sniffer_settings_t& sniffer) {
+        data.sniffer = sniffer;
+        changed      = true;
+    }
+
+    void setAccessPointSettings(const access_point_settings_t& ap) {
+        data.ap = ap;
+        changed = true;
+    }
+
+    void setWebSettings(const web_settings_t& web) {
+        data.web = web;
+        changed  = true;
     }
 }

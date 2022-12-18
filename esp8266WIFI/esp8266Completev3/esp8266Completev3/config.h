@@ -222,8 +222,21 @@ namespace config {
     void reset();
     void print();
 
+    const settings_t& getAllSettings();
+    const version_t& getVersion();
+    const autosave_settings_t& getAutosaveSettings();
+    const attack_settings_t& getAttackSettings();
+    const wifi_settings_t& getWifiSettings();
     const sniffer_settings_t& getSnifferSettings();
-    
+    const access_point_settings_t& getAccessPointSettings();
+    const web_settings_t& getWebSettings();
 
+    void setAllSettings(settings_t& settings);
+    void setAutosaveSettings(const autosave_settings_t& autosave);
+    void setAttackSettings(const attack_settings_t& attack);
+    void setWifiSettings(const wifi_settings_t& wifi);
+    void setSnifferSettings(const sniffer_settings_t& sniffer);
+    void setAccessPointSettings(const access_point_settings_t& ap);
+    void setWebSettings(const web_settings_t& web);
 
 }

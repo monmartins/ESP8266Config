@@ -753,6 +753,17 @@ void Accesspoints::Device_removeAll() {
     prntln(N_REMOVED_ALL);
     changed = true;
 }
+bool Accesspoints::Device_isStation(int num) {
+    return Device_getBssid(num) != NULL;
+}
+
+int Accesspoints::Device_stations() {
+    int num = 0;
+
+    for (int i = 0; i < Device_count(); i++)
+        if (Device_isStation(i)) num++;
+    return num;
+}
 
 bool Accesspoints::Device_internal_check(int num) {
     return num >= 0 && num < Device_count();

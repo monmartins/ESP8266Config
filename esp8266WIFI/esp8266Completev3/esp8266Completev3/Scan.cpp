@@ -393,3 +393,55 @@ void Scan::printSelected() {
     accesspoints.Stations_printSelected();
     accesspoints.Device_printSelected();
 }
+
+double Scan::getScaleFactor(uint8_t height) {
+    return (double)height / (double)getMaxPacket();
+}
+
+uint32_t Scan::getMaxPacket() {
+    uint16_t max = 0;
+
+    for (uint8_t i = 0; i < list->size(); i++) {
+        if (list->get(i) > max) max = list->get(i);
+    }
+    return max;
+}
+
+uint32_t Scan::getPacketRate() {
+    return list->get(list->size() - 1);
+}
+
+
+uint32_t Scan::getPackets(int i) {
+    if (list->size() < SCAN_PACKET_LIST_SIZE) {
+        uint8_t translatedNum = SCAN_PACKET_LIST_SIZE - list->size();
+
+        if (i >= translatedNum) return list->get(i - translatedNum);
+
+        return 0;
+    } else {
+        return list->get(i);
+    }
+}
+
+String Scan::getMode() {
+    switch (scanMode) {
+        case SCAN_MODE_OFF:
+            return str(SC_MODE_OFF);
+
+        case SCAN_MODE_APS:
+            return str(SC_MODE_AP);
+
+        case SCAN_MODE_STATIONS:
+            return str(SC_MODE_ST);
+
+        case SCAN_MODE_ALL:
+            return str(SC_MODE_ALL);
+
+        case SCAN_MODE_SNIFFER:
+            return str(SC_MODE_SNIFFER);
+
+        default:
+            return String();
+    }
+}
