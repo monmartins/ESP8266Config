@@ -247,9 +247,9 @@ void Scan::start(uint8_t mode, uint32_t time, uint8_t nextmode, uint32_t continu
     else if (mode == SCAN_MODE_OFF) {
         wifi_promiscuous_enable(false);
 
-        // if (settings::getWebSettings().enabled) wifi::resumeAP();
-        // prntln(SC_STOPPED);
-        // save(true);
+        if (config::getWebSettings().enabled) wifi::resumeAP();
+        prntln(SC_STOPPED);
+        save(true);
 
         if (scan_continue_mode != SCAN_MODE_OFF) {
             prnt(SC_RESTART);

@@ -396,7 +396,11 @@ void Accesspoints::Stations_deselectAll() {
     prntln(ST_DESELECTED_ALL);
     changed = true;
 }
-
+void Accesspoints::Stations_removeAll() {
+    Stations_internal_removeAll();
+    prntln(ST_CLEARED_LIST);
+    Stations_changed = true;
+}
 
 void Accesspoints::Stations_removeOldest() {
     int oldest = 0;
@@ -458,6 +462,47 @@ uint32_t* Accesspoints::Stations_getTime(int num) {
     if (!Stations_internal_check(num)) return NULL;
 
     return list_Station->get(num).time;
+}
+
+String Accesspoints::Stations_getTimeStr(int num) {
+    if (!Stations_check(num)) return String();
+
+    uint32_t difference = currentTime - *Stations_getTime(num);
+
+    if (difference < 1000) return str(ST_SMALLER_ONESEC);
+    else if (difference < 60000) return str(ST_SMALLER_ONEMIN);
+    else {
+        uint32_t minutes = difference / 60000;
+
+        if (minutes > 60) return str(ST_BIGER_ONEHOUR);
+        else return (String)minutes + str(STR_MIN);
+    }
+}
+
+String Accesspoints::Stations_getVendorStr(int num) {
+    if (!Stations_check(num)) return String();
+
+    return searchVendor(list_Station->get(num).mac);
+}
+uint8_t* Accesspoints::Stations_getAPMac(int num) {
+    if (!Stations_check(num)) return 0;
+
+    return WiFi.BSSID(list_Station->get(num).ap);
+}
+
+String Accesspoints::Stations_getAPMacStr(int num) {
+    if (!Stations_check(num)) return String();
+
+    uint8_t* mac = Stations_getAPMac(num);
+
+    return bytesToStr(mac, 6);
+}
+
+
+uint8_t Accesspoints::Stations_getCh(int num) {
+    if (!Stations_check(num)) return 0;
+
+    return list_Station->get(num).ch;
 }
 
 bool Accesspoints::Stations_check(int num) {
@@ -641,10 +686,6 @@ bool Accesspoints::Device_check(int num) {
     prntln(num);
     return false;
 }
-int Accesspoints::Device_count() {
-    return list_Device->size();
-}
-
 void Accesspoints::Device_load() {
     Device_internal_removeAll();
 
@@ -751,12 +792,131 @@ void Accesspoints::Device_sort() {
 void Accesspoints::Device_removeAll() {
     Device_internal_removeAll();
     prntln(N_REMOVED_ALL);
-    changed = true;
+    Device_changed = true;
 }
+//
+uint8_t* Accesspoints::Device_getMac(int num) {
+    if (!Device_check(num)) return NULL;
+
+    return list_Device->get(num).mac;
+}
+
+uint8_t* Accesspoints::Device_getBssid(int num) {
+    if (!Device_check(num)) return NULL;
+
+    return list_Device->get(num).apBssid;
+}
+
+String Accesspoints::Device_getMacStr(int num) {
+    if (!Device_check(num)) return String();
+
+    uint8_t* mac = getMac(num);
+
+    return bytesToStr(mac, 6);
+}
+
+String Accesspoints::Device_getBssidStr(int num) {
+    String value;
+
+    if (Device_getBssid(num) != NULL) {
+        uint8_t* mac = Device_getBssid(num);
+
+        for (int i = 0; i < 6; i++) {
+            if (mac[i] < 0x10) value += ZERO;
+            value += String(mac[i], HEX);
+
+            if (i < 5) value += DOUBLEPOINT;
+        }
+    }
+    return value;
+}
+
+String Accesspoints::Device_getVendorStr(int num) {
+    if (!Device_check(num)) return String();
+
+    return searchVendor(list_Device->get(num).mac);
+}
+
+String Accesspoints::Device_getSelectedStr(int num) {
+    return b2a(getSelected(num));
+}
+
+uint8_t Accesspoints::Device_getCh(int num) {
+    if (!Device_check(num)) return 1;
+
+    return list_Device->get(num).ch;
+}
+
+bool Accesspoints::Device_getSelected(int num) {
+    if (!Device_check(num)) return false;
+
+    return list_Device->get(num).selected;
+}
+
+//
 bool Accesspoints::Device_isStation(int num) {
     return Device_getBssid(num) != NULL;
 }
+//
+void Accesspoints::Device_setName(int num, String name) {
+    if (!Device_check(num)) return;
 
+    Device_internal_add(Device_getMac(num), name, Device_getBssid(num), Device_getCh(num), Device_getSelected(num));
+
+    prntln(N_CHANGED_NAME);
+
+    Device_internal_remove(num);
+    Device_sort();
+    Device_changed = true;
+}
+
+void Accesspoints::Device_setMac(int num, String macStr) {
+    if (!Device_check(num)) return;
+
+    uint8_t mac[6];
+
+    strToMac(macStr, mac);
+    Device_internal_add(mac, Device_getName(num), Device_getBssid(num), Device_getCh(num), Device_getSelected(num));
+    prntln(N_CHANGED_MAC);
+    Device_internal_remove(num);
+    Device_sort();
+    Device_changed = true;
+}
+
+void Accesspoints::Device_setCh(int num, uint8_t ch) {
+    if (!Device_check(num)) return;
+
+    Device_internal_add(Device_getMac(num), Device_getName(num), Device_getBssid(num), ch, Device_getSelected(num));
+    prntln(N_CHANGED_CH);
+    Device_internal_remove(num);
+    Device_sort();
+    Device_changed = true;
+}
+
+void Accesspoints::Device_setBSSID(int num, String bssidStr) {
+    if (!Device_check(num)) return;
+
+    uint8_t mac[6];
+
+    strToMac(bssidStr, mac);
+    Device_internal_add(Device_getMac(num), Device_getName(num), mac, Device_getCh(num), Device_getSelected(num));
+    prntln(N_CHANGED_BSSID);
+    Device_internal_remove(num);
+    Device_sort();
+    Device_changed = true;
+}
+
+int Accesspoints::Device_count() {
+    return list_Device->size();
+}
+int Accesspoints::Device_selected() {
+    int num = 0;
+
+    for (int i = 0; i < count(); i++)
+        if (getSelected(i)) num++;
+    return num;
+}
+//
 int Accesspoints::Device_stations() {
     int num = 0;
 
@@ -813,6 +973,17 @@ void Accesspoints::Device_internal_add(String macStr, String name, String bssidS
         Device_internal_add(mac, name, NULL, ch, selected);
     }
 }
+void Accesspoints::Device_internal_removeAll() {
+    while (Device_count() > 0) {
+        free(list_Device->get(0).mac);
+        free(list_Device->get(0).name);
+
+        if (list_Device->get(0).apBssid) free(list_Device->get(0).apBssid);
+        list_Device->remove(0);
+    }
+}
+
+
 //SSID
 
 void Accesspoints::SSIDS_load() {

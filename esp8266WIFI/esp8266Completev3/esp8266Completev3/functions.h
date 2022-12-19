@@ -223,6 +223,16 @@ const char A_STATUS[] PROGMEM = "[Pkt/s] All: %+4u | Deauths: %+3u/%-3u | Beacon
 const char A_ENABLED_OUTPUT[] PROGMEM = "Enabled attack output";
 const char A_DISABLED_OUTPUT[] PROGMEM = "Disabled attack output";
 
+// ===== SETUP ===== //
+const char SETUP_OK[] PROGMEM = "OK";
+const char SETUP_ERROR[] PROGMEM = "ERROR";
+const char SETUP_MOUNT_SPIFFS[] PROGMEM = "Mounting SPIFFS...";
+const char SETUP_FORMAT_SPIFFS[] PROGMEM = "Formatting SPIFFS...";
+const char SETUP_FORMAT_EEPROM[] PROGMEM = "Formatting EEPROM...";
+const char SETUP_SERIAL_WARNING[] PROGMEM = "Warning: Serial deactivated";
+const char SETUP_STARTED[] PROGMEM = "STARTED! \\o/";
+const char SETUP_COPYING[] PROGMEM = "Copying ";
+const char SETUP_PROGMEM_TO_SPIFFS[] PROGMEM = " from PROGMEM to SPIFFS...";
 
 #define debug_init()\
     DEBUG_PORT.begin(DEBUG_BAUD);\
