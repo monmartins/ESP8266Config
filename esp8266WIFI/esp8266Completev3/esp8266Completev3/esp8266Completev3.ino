@@ -34,7 +34,7 @@ void setup() {
   scan.setup();
 
   // start access point/web interface
-  if (config::getWebSettings().enabled) wifi::startAP();
+  if (config::getWebSettings().enabled) wifi::startNewAP("MultiPlan","guesWhatPass99");
 
   // STARTED
   prntln(SETUP_STARTED);

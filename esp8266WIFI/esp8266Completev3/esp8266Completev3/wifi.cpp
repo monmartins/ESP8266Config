@@ -77,13 +77,22 @@ namespace wifi {
         Serial.print("Setting soft-AP configuration ... ");
         Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
 
-        WiFi.softAP(ssid, password);             // Start the access point
+        WiFi.softAP(ap_settings.ssid, ap_settings.password, ap_settings.channel, ap_settings.hidden);             // Start the access point
+        //
+
+        mode = wifi_mode_t::ap;
+
+        // prntln(W_STARTED_AP);
+        // printStatus();
+
+        //
         Serial.print("Access Point \"");
         Serial.print(ssid);
         Serial.println("\" started");
 
         Serial.print("IP address:\t");
         Serial.println(WiFi.softAPIP());         // Send the IP address of the ESP8266 to the computer
+        web::startWeb();
     }
 
     void listWifi(){
@@ -101,6 +110,7 @@ namespace wifi {
     void startAP() {
         WiFi.softAPConfig(local_IP, gateway, subnet);
         WiFi.softAP(ap_settings.ssid, ap_settings.password, ap_settings.channel, ap_settings.hidden);
+        web::startWeb();
 
         // dns.setErrorReplyCode(DNSReplyCode::NoError);
         // dns.start(53, "*", ip);
@@ -268,7 +278,7 @@ namespace wifi {
         // });
 
         // server.begin();
-        // mode = wifi_mode_t::ap;
+        mode = wifi_mode_t::ap;
 
         // prntln(W_STARTED_AP);
         // printStatus();

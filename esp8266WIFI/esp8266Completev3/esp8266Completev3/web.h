@@ -4,6 +4,7 @@
 #include <DNSServer.h>
 #include <ESP8266mDNS.h>
 #include <ArduinoJson.h>
+#include <WiFiClient.h>
 
 namespace web {
     

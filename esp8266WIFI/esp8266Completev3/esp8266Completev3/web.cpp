@@ -6,6 +6,16 @@ namespace web {
     ESP8266WebServer server(80);
     DNSServer dns;
     
+    void handleWifi() {
+        String draw = server.arg("plain");
+        DynamicJsonDocument doc(512);
+        doc["name_wifi"] = WiFi.SSID();
+        doc["ip"] = WiFi.softAPIP();
+        char json[512];
+        serializeJson(doc, json);
+        server.send(200, "application/json",json);
+        // server.send(200, "text/plain", "Hello world!");   // Send HTTP status 200 (Ok) and send some text to the browser/client
+    }
     void handleGetInfoWifi() {
         String draw = server.arg("plain");
         DynamicJsonDocument doc(512);
@@ -84,7 +94,7 @@ namespace web {
         Serial.print("Connected to ");
         Serial.println(WiFi.SSID());              // Tell us what network we're connected to
         Serial.print("IP address:\t");
-        Serial.println(WiFi.localIP());           // Send the IP address of the ESP8266 to the computer
+        Serial.println(WiFi.softAPIP());           // Send the IP address of the ESP8266 to the computer
 
         if (MDNS.begin("esp8266")) {              // Start the mDNS responder for esp8266.local
             Serial.println("mDNS responder started");

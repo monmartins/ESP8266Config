@@ -13,11 +13,11 @@
 #define DEAUTHER_VERSION_REVISION 0
 
 // ===== Web ===== //
-#ifndef WEB_IP_ADDR
-  #define WEB_IP_ADDR (192, 168, 4, 1)
-  #define GATEWAY (192, 168, 4, 1)
-  #define SUBNET (255,255,255,0)
-#endif // ifndef WEB_IP_ADDR
+// #ifndef WEB_IP_ADDR
+#define WEB_IP_ADDR (192, 168, 4, 1)
+#define GATEWAY (192, 168, 4, 1)
+#define SUBNET (255,255,255,0)
+// #endif // ifndef WEB_IP_ADDR
 
 #define MAGIC_NUM 3416245
 
