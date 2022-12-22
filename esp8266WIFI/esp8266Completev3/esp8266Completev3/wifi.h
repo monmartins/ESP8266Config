@@ -33,13 +33,13 @@ typedef struct ap_settings_t {
 
 // Wifi was responsible for manage the AP and Station ESP8266 and list of WIfis
 #define STATION_LIST_SIZE 60
+
 namespace wifi {
 
 
     void startNewAP(const char *ssid, const char *password);
     void startMultiClientAP(const char *ssid, const char *password);
     void runMultiClientAP();
-
 
     void begin();
     String getMode();
@@ -50,7 +50,5 @@ namespace wifi {
 
     void listWifi();
     void update();
-
-
     
 }

@@ -1,20 +1,28 @@
 #include "web.h"
 
+
+
 namespace web {
 
     // Server and other global objects
     ESP8266WebServer server(80);
     DNSServer dns;
+    //
+    const char* www_username = "admin";
+    const char* www_password = "JUFesp82662022*";
+    // allows you to set the realm of authentication Default:"Login Required"
+    const char* www_realm = "Auth Required";
+    // the Content of the HTML response in case of Unautherized Access Default:empty
+    String authFailResponse = "Authentication Failed";
     
     void handleWifi() {
         String draw = server.arg("plain");
         DynamicJsonDocument doc(512);
-        doc["name_wifi"] = WiFi.SSID();
+        doc["name_wifi"] = WiFi.softAPSSID();
         doc["ip"] = WiFi.softAPIP();
         char json[512];
         serializeJson(doc, json);
         server.send(200, "application/json",json);
-        // server.send(200, "text/plain", "Hello world!");   // Send HTTP status 200 (Ok) and send some text to the browser/client
     }
     void handleGetInfoWifi() {
         String draw = server.arg("plain");
@@ -47,11 +55,31 @@ namespace web {
         server.send(200, "application/json", json);
         
     }
+    bool auth(){
+        if (!server.authenticate(www_username, www_password))
+        // Basic Auth Method with Custom realm and Failure Response
+        // return server.requestAuthentication(BASIC_AUTH, www_realm, authFailResponse);
+        // Digest Auth Method with realm="Login Required" and empty Failure Response
+        // return server.requestAuthentication(DIGEST_AUTH);
+        // Digest Auth Method with Custom realm and empty Failure Response
+        // return server.requestAuthentication(DIGEST_AUTH, www_realm);
+        // Digest Auth Method with Custom realm and Failure Response
+        {
+            server.sendHeader("Location", String("/"), true);
+            server.send (302, "text/plain", "Login Failed");
+            server.requestAuthentication(DIGEST_AUTH, www_realm, authFailResponse);
+            return false;
+        }
+        return true;
+    }
     void handleRoot() {
-        server.send(200, "text/plain", "Hello world!");   // Send HTTP status 200 (Ok) and send some text to the browser/client
+        if(auth()) return;
+        server.sendHeader("Location", String("/index.html"), true);
+        server.send (302, "text/plain", "Login Ok");
     }
 
     void handleNotFound(){
+        // if(auth()) return;
         if (!handleFileRead(server.uri()))
             server.send(404, "text/plain", "404: Not found"); // Send HTTP status 404 (Not Found) when there's no handler for the URI in the request
     }
@@ -72,6 +100,7 @@ namespace web {
     }
 
     bool handleFileRead(String path){  // send the right file to the client (if it exists)
+        // if(auth()) return;
         Serial.println("handleFileRead: " + path);
         if(path.endsWith("/")) path += "index.html";           // If a folder is requested, send the index file
             String contentType = getContentType(path);             // Get the MIME type

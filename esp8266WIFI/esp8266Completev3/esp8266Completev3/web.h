@@ -8,6 +8,15 @@
 
 namespace web {
     
+
+    
+    // struct AUTH_TOKEN {
+    //     bool     active        = false; // if user was login successfull
+    //     IPAddress ip;     // IP of client
+    // };
+
+    bool auth();
+
     void handleWifi();
     void handleWifiList();
     void handleRoot();
